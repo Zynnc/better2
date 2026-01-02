@@ -21,17 +21,24 @@ jobs:
       with:
         ndk-version: r26b
 
-    - name: Build
+    - name: Configure
       run: |
-        mkdir -p build/${{ matrix.abi }}
-        cmake -B build/${{ matrix.abi }} \
+        cmake -S . -B build/${{ matrix.abi }} \
           -DCMAKE_TOOLCHAIN_FILE=${{ steps.ndk.outputs.ndk-path }}/build/cmake/android.toolchain.cmake \
           -DANDROID_ABI=${{ matrix.abi }} \
           -DANDROID_PLATFORM=android-24 \
           -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: |
         cmake --build build/${{ matrix.abi }} -j$(nproc)
+
+    - name: Collect libs
+      run: |
+        mkdir -p out/${{ matrix.abi }}
+        find build/${{ matrix.abi }} -name "*.so" -exec cp -v {} out/${{ matrix.abi }}/ \;
 
     - uses: actions/upload-artifact@v4
       with:
-        name: libBetterBrightness-${{ matrix.abi }}
-        path: build/${{ matrix.abi }}/libBetterBrightness.so
+        name: libs-${{ matrix.abi }}
+        path: out/${{ matrix.abi }}
